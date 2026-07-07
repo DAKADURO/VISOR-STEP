@@ -118,6 +118,31 @@ body, html {
   border-color: var(--accent);
 }
 
+/* Botón principal de apertura de archivo */
+.primary-btn {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--accent), #388bff);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(88,166,255,0.3);
+}
+
+.primary-btn:hover {
+  background: linear-gradient(135deg, var(--accent-hover), #58a6ff);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(88,166,255,0.5);
+  color: #fff;
+}
+
 /* Pantalla de Carga */
 #loading-overlay {
   position: absolute;

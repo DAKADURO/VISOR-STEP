@@ -13,6 +13,8 @@ const loadingOverlay = document.getElementById('loading-overlay');
 const loadingText = document.getElementById('loading-text');
 const btnWireframe = document.getElementById('btn-wireframe');
 const btnReset = document.getElementById('btn-reset');
+const btnOpenFile = document.getElementById('btn-open-file');
+const fileInput = document.getElementById('file-input');
 
 init();
 animate();
@@ -97,6 +99,23 @@ function setupEvents() {
     }
 
     loadModel(file);
+  });
+
+  // Botón de apertura de archivo
+  btnOpenFile.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext !== 'step' && ext !== 'stp') {
+      alert('Por favor, selecciona un archivo .step o .stp');
+      return;
+    }
+    loadModel(file);
+    fileInput.value = ''; // Resetear para poder cargar el mismo archivo otra vez
   });
 
   // Botones UI
