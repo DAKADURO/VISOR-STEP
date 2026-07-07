@@ -16,6 +16,30 @@ const btnReset = document.getElementById('btn-reset');
 const btnOpenFile = document.getElementById('btn-open-file');
 const fileInput = document.getElementById('file-input');
 
+// Nuevos Elementos UI
+const colorControls = document.getElementById('color-controls');
+const colorBg = document.getElementById('color-bg');
+const colorPart = document.getElementById('color-part');
+const partColorContainer = document.getElementById('part-color-container');
+
+const btnMeasure = document.getElementById('btn-measure');
+const btnScreenshot = document.getElementById('btn-screenshot');
+const measurePanel = document.getElementById('measure-panel');
+const measureResult = document.getElementById('measure-result');
+
+// Variables para Herramientas
+let modelSize = 100;
+let raycaster = new THREE.Raycaster();
+let mouse = new THREE.Vector2();
+
+let selectedMesh = null;
+let originalEmissive = new THREE.Color();
+
+let isMeasuring = false;
+let measurePoints = [];
+let measureMarkers = [];
+let measureLine = null;
+
 init();
 animate();
 
@@ -29,7 +53,7 @@ async function init() {
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
   camera.position.set(0, 100, 150);
 
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
@@ -83,6 +107,8 @@ async function init() {
 
 function setupEvents() {
   window.addEventListener('resize', onWindowResize);
+  const canvas = document.getElementById('webgl-canvas');
+  canvas.addEventListener('click', onCanvasClick);
 
   // Drag and drop events
   window.addEventListener('dragover', (e) => {
@@ -148,6 +174,41 @@ function setupEvents() {
       centerCameraOnModel(currentModel);
     }
   });
+
+  // Color de fondo
+  colorBg.addEventListener('input', (e) => {
+    scene.background.set(e.target.value);
+  });
+
+  // Color de pieza
+  colorPart.addEventListener('input', (e) => {
+    if (selectedMesh && selectedMesh.material) {
+      selectedMesh.material.color.set(e.target.value);
+    }
+  });
+
+  // Medir
+  btnMeasure.addEventListener('click', () => {
+    isMeasuring = !isMeasuring;
+    btnMeasure.classList.toggle('active', isMeasuring);
+    measurePanel.classList.toggle('hidden', !isMeasuring);
+    
+    if (!isMeasuring) {
+      clearMeasurement();
+    } else {
+      clearSelection();
+    }
+  });
+
+  // Captura de pantalla
+  btnScreenshot.addEventListener('click', () => {
+    renderer.render(scene, camera);
+    const dataURL = renderer.domElement.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = dataURL;
+    a.download = 'visor-3d-screenshot.png';
+    a.click();
+  });
 }
 
 function onWindowResize() {
@@ -188,6 +249,11 @@ async function loadModel(file) {
     scene.add(currentModel);
     centerCameraOnModel(currentModel);
 
+    // Reiniciar UI
+    colorControls.classList.remove('hidden');
+    clearSelection();
+    clearMeasurement();
+
   } catch (error) {
     console.error(error);
     alert("Error procesando el archivo: " + error.message);
@@ -205,6 +271,7 @@ function centerCameraOnModel(model) {
   model.position.y += (model.position.y - center.y);
   model.position.z += (model.position.z - center.z);
 
+  modelSize = size;
   controls.maxDistance = size * 10;
   camera.near = size / 100;
   camera.far = size * 100;
@@ -225,4 +292,96 @@ function animate() {
   if (renderer && scene && camera) {
     renderer.render(scene, camera);
   }
+}
+
+// Lógica de interacción (Click en el canvas)
+function onCanvasClick(event) {
+  if (!currentModel) return;
+
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+
+  const meshes = [];
+  currentModel.traverse((child) => {
+    if (child.isMesh && (!child.userData || !child.userData.isEdge)) {
+      meshes.push(child);
+    }
+  });
+
+  const intersects = raycaster.intersectObjects(meshes, false);
+
+  if (isMeasuring) {
+    if (intersects.length > 0) {
+      addMeasurePoint(intersects[0].point);
+    }
+  } else {
+    if (intersects.length > 0) {
+      selectMesh(intersects[0].object);
+    } else {
+      clearSelection();
+    }
+  }
+}
+
+function selectMesh(mesh) {
+  clearSelection();
+  selectedMesh = mesh;
+  
+  if (mesh.material) {
+    originalEmissive.copy(mesh.material.emissive);
+    mesh.material.emissive.setHex(0x333333); // Resaltar
+    
+    partColorContainer.classList.remove('disabled');
+    colorPart.disabled = false;
+    colorPart.value = '#' + mesh.material.color.getHexString();
+  }
+}
+
+function clearSelection() {
+  if (selectedMesh && selectedMesh.material) {
+    selectedMesh.material.emissive.copy(originalEmissive);
+  }
+  selectedMesh = null;
+  partColorContainer.classList.add('disabled');
+  colorPart.disabled = true;
+}
+
+function addMeasurePoint(point) {
+  if (measurePoints.length >= 2) {
+    clearMeasurement();
+  }
+
+  measurePoints.push(point);
+
+  const markerGeo = new THREE.SphereGeometry(modelSize / 70, 16, 16);
+  const markerMat = new THREE.MeshBasicMaterial({ color: 0xff3333, depthTest: false });
+  const marker = new THREE.Mesh(markerGeo, markerMat);
+  marker.position.copy(point);
+  marker.renderOrder = 999;
+  scene.add(marker);
+  measureMarkers.push(marker);
+
+  if (measurePoints.length === 2) {
+    const mat = new THREE.LineBasicMaterial({ color: 0xff3333, depthTest: false });
+    const geo = new THREE.BufferGeometry().setFromPoints(measurePoints);
+    measureLine = new THREE.Line(geo, mat);
+    measureLine.renderOrder = 999;
+    scene.add(measureLine);
+
+    const dist = measurePoints[0].distanceTo(measurePoints[1]);
+    measureResult.textContent = dist.toFixed(2);
+  }
+}
+
+function clearMeasurement() {
+  measureMarkers.forEach(m => scene.remove(m));
+  measureMarkers = [];
+  if (measureLine) {
+    scene.remove(measureLine);
+    measureLine = null;
+  }
+  measurePoints = [];
+  measureResult.textContent = '--';
 }

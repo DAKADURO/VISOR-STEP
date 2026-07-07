@@ -143,6 +143,90 @@ body, html {
   color: #fff;
 }
 
+/* Grid para los controles */
+.tools-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+/* Controles de color */
+.color-controls {
+  display: flex;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.color-controls.hidden {
+  display: none;
+}
+
+.color-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-item.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.color-item label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.color-item input[type="color"] {
+  -webkit-appearance: none;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+  background: transparent;
+}
+
+.color-item input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-item input[type="color"]::-webkit-color-swatch {
+  border: 1px solid var(--glass-border);
+  border-radius: 4px;
+}
+
+/* Panel de Medición */
+#measure-panel {
+  background: rgba(20, 100, 255, 0.1);
+  border: 1px solid rgba(88, 166, 255, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+#measure-panel.hidden {
+  display: none;
+}
+
+#measure-panel p {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 16px;
+}
+
+#measure-panel .small-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
 /* Pantalla de Carga */
 #loading-overlay {
   position: absolute;

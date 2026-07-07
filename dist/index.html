@@ -6,8 +6,8 @@
     <title>Visor STEP 3D Premium</title>
     <!-- Usamos Google Fonts para una tipografía moderna -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-BqRYd5DB.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BoD7AtLV.css">
+    <script type="module" crossorigin src="/assets/index-C-Pnfj3-.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CkVcZT4u.css">
   </head>
   <body>
     <div id="app">
@@ -30,9 +30,29 @@
           </button>
           <!-- Input de archivo oculto (acepta .step y .stp) -->
           <input type="file" id="file-input" accept=".step,.stp" style="display:none" />
-          <div class="controls">
+          <div class="controls tools-grid">
             <button id="btn-wireframe" class="glass-btn">Ver Bordes</button>
-            <button id="btn-reset" class="glass-btn">Reiniciar Cámara</button>
+            <button id="btn-reset" class="glass-btn">Reiniciar</button>
+            <button id="btn-measure" class="glass-btn" title="Medir distancias">📐 Medir</button>
+            <button id="btn-screenshot" class="glass-btn" title="Tomar foto">📸 Foto</button>
+          </div>
+
+          <!-- Selectores de color -->
+          <div class="color-controls hidden" id="color-controls">
+            <div class="color-item">
+              <label for="color-bg">Fondo:</label>
+              <input type="color" id="color-bg" value="#0d1117">
+            </div>
+            <div class="color-item disabled" id="part-color-container">
+              <label for="color-part">Pieza:</label>
+              <input type="color" id="color-part" value="#b0c4de" disabled>
+            </div>
+          </div>
+          
+          <!-- Panel de Medición -->
+          <div id="measure-panel" class="hidden">
+            <p><strong>Distancia:</strong> <span id="measure-result">--</span> mm</p>
+            <p class="small-text">Haz clic en dos puntos del modelo.</p>
           </div>
         </header>
         
