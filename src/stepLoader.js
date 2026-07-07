@@ -1,73 +1,52 @@
 import * as THREE from 'three';
 
 let occt = null;
-let initPromise = null;
 
-// Carga el script OCCT dinámicamente usando un script tag (evita que Vite lo procese)
+// Carga el script OCCT como tag <script> y espera a que exponga `window.occtimportjs`
 function loadOcctScript() {
   return new Promise((resolve, reject) => {
-    if (typeof window.__OcctImportJs !== 'undefined') {
-      resolve(window.__OcctImportJs);
-      return;
-    }
-
     const script = document.createElement('script');
     script.src = '/occt-import-js.js';
     script.onload = () => {
-      // El script expone la función init en el objeto global
-      if (typeof window.occtimportjs !== 'undefined') {
+      // El archivo expone `var occtimportjs` en el scope global del script
+      // Al cargarse como <script> clásico (no módulo), queda en window
+      if (typeof window.occtimportjs === 'function') {
         resolve(window.occtimportjs);
-      } else if (typeof occtimportjs !== 'undefined') {
-        // eslint-disable-next-line no-undef
-        resolve(occtimportjs);
       } else {
-        // Intentar buscar la función globalmente
-        const keys = Object.keys(window).filter(k =>
-          typeof window[k] === 'function' && k.toLowerCase().includes('occt')
-        );
-        if (keys.length > 0) {
-          resolve(window[keys[0]]);
-        } else {
-          reject(new Error('No se encontró la función de inicialización de occt-import-js en el scope global.'));
-        }
+        reject(new Error('occtimportjs no encontrado en window después de cargar el script.'));
       }
     };
-    script.onerror = () => reject(new Error('No se pudo cargar /occt-import-js.js'));
+    script.onerror = () => reject(new Error('Falló la carga de /occt-import-js.js'));
     document.head.appendChild(script);
   });
 }
 
 export async function initStepLoader() {
   if (occt) return true;
-  if (initPromise) return initPromise;
 
-  initPromise = (async () => {
-    try {
-      const initFn = await loadOcctScript();
-      occt = await initFn({
-        locateFile: (fileName) => {
-          if (fileName.endsWith('.wasm')) return '/occt-import-js.wasm';
-          return fileName;
-        },
-      });
-      console.log('✅ Motor OCCT inicializado');
-      return true;
-    } catch (err) {
-      console.error('❌ Error inicializando OCCT:', err);
-      occt = null;
-      initPromise = null;
-      return false;
-    }
-  })();
+  try {
+    const initFn = await loadOcctScript();
 
-  return initPromise;
+    occt = await initFn({
+      locateFile: (fileName) => {
+        if (fileName.endsWith('.wasm')) return '/occt-import-js.wasm';
+        return fileName;
+      },
+    });
+
+    console.log('✅ Motor OCCT listo');
+    return true;
+  } catch (err) {
+    console.error('❌ Error inicializando OCCT:', err);
+    occt = null;
+    return false;
+  }
 }
 
 export function isOcctReady() {
   return occt !== null;
 }
 
-// Procesa el buffer del archivo STEP y retorna un Group de Three.js
 export function parseStepFile(fileBuffer) {
   if (!occt) {
     throw new Error('El motor WebAssembly no está listo. Recarga la página e inténtalo de nuevo.');
@@ -134,7 +113,6 @@ export function parseStepFile(fileBuffer) {
     mesh.castShadow = true;
     mesh.receiveShadow = true;
 
-    // Agregar bordes
     const edgesGeo = new THREE.EdgesGeometry(geometry, 20);
     const edges = new THREE.LineSegments(edgesGeo, lineMaterial);
     edges.visible = false;
