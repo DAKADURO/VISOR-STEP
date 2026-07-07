@@ -52,19 +52,12 @@ export function parseStepFile(fileBuffer) {
     throw new Error('El motor WebAssembly no está listo. Recarga la página e inténtalo de nuevo.');
   }
 
-  const fileName = 'model.step';
-
-  // Limpiar archivo previo si existe
-  try { occt.FS.unlink('/' + fileName); } catch (_) {}
-
-  // Escribir en memoria WASM
-  occt.FS.createDataFile('/', fileName, new Uint8Array(fileBuffer), true, true);
-
   let result;
   try {
-    result = occt.ReadStepFile('/' + fileName, null);
-  } finally {
-    try { occt.FS.unlink('/' + fileName); } catch (_) {}
+    const uint8Array = new Uint8Array(fileBuffer);
+    result = occt.ReadStepFile(uint8Array, null);
+  } catch (err) {
+    throw new Error('Fallo al parsear el archivo STEP: ' + err.message);
   }
 
   if (!result || !result.success) {
