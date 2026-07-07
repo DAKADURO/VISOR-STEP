@@ -1,0 +1,21 @@
+{
+  "name": "visor-step",
+  "version": "1.0.0",
+  "description": "Visor 3D para archivos STEP",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.0",
+    "occt-import-js": "^0.0.23",
+    "three": "^0.160.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
