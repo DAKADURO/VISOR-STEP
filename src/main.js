@@ -1,7 +1,7 @@
 import './style.css';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { initStepLoader, parseStepFile } from './stepLoader.js';
+import { initStepLoader, parseStepFile, isOcctReady } from './stepLoader.js';
 
 let scene, camera, renderer, controls;
 let currentModel = null;
@@ -64,8 +64,18 @@ async function init() {
   plane.receiveShadow = true;
   scene.add(plane);
 
-  // 4. Inicializar motor WASM
-  await initStepLoader();
+  // 4. Inicializar motor WASM con feedback visual
+  loadingText.textContent = 'Cargando motor 3D...';
+  loadingOverlay.classList.remove('hidden');
+  const ok = await initStepLoader();
+  loadingOverlay.classList.add('hidden');
+
+  if (!ok) {
+    btnOpenFile.disabled = true;
+    btnOpenFile.textContent = '⚠ Motor no disponible';
+    btnOpenFile.style.opacity = '0.5';
+    console.error('Motor OCCT no pudo inicializarse.');
+  }
 
   // 5. Configurar Eventos
   setupEvents();
@@ -147,6 +157,10 @@ function onWindowResize() {
 }
 
 async function loadModel(file) {
+  if (!isOcctReady()) {
+    alert('El motor 3D no está disponible. Recarga la página.');
+    return;
+  }
   loadingText.textContent = `Parseando ${file.name}...`;
   loadingOverlay.classList.remove('hidden');
 
