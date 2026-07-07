@@ -314,7 +314,9 @@ function onCanvasClick(event) {
 
   if (isMeasuring) {
     if (intersects.length > 0) {
-      addMeasurePoint(intersects[0].point);
+      const snapThreshold = modelSize * 0.05; // Tolerancia del 5% del tamaño de la pieza
+      const snappedPoint = getSnappedPoint(intersects[0], snapThreshold);
+      addMeasurePoint(snappedPoint);
     }
   } else {
     if (intersects.length > 0) {
@@ -384,4 +386,39 @@ function clearMeasurement() {
   }
   measurePoints = [];
   measureResult.textContent = '--';
+}
+
+function getSnappedPoint(intersect, threshold) {
+  const mesh = intersect.object;
+  const point = intersect.point;
+  
+  if (!mesh.geometry || !mesh.geometry.attributes.position) {
+    return point; // Si no hay geometría, devolver el punto normal
+  }
+  
+  const positions = mesh.geometry.attributes.position.array;
+  let closestDist = Infinity;
+  let closestPoint = new THREE.Vector3();
+  const tempVertex = new THREE.Vector3();
+  
+  const matrixWorld = mesh.matrixWorld;
+  
+  // Iterar por todos los vértices
+  for (let i = 0; i < positions.length; i += 3) {
+    tempVertex.set(positions[i], positions[i + 1], positions[i + 2]);
+    tempVertex.applyMatrix4(matrixWorld);
+    
+    const dist = tempVertex.distanceTo(point);
+    if (dist < closestDist) {
+      closestDist = dist;
+      closestPoint.copy(tempVertex);
+    }
+  }
+  
+  // Si el vértice más cercano está dentro del radio de tolerancia, hacer snap
+  if (closestDist <= threshold) {
+    return closestPoint;
+  }
+  
+  return point; // Retornar el punto original si no hay vértice cercano
 }
